@@ -88,6 +88,8 @@ namespace UnityGLTF
 		private bool exportAnimations = true;
 		[SerializeField, Tooltip("When enabled the Animator State speed parameter is baked into the exported glTF animation")]
 		private bool bakeAnimationSpeed = true;
+        [SerializeField, Tooltip("Applies a 60 times multipler to the time channel")]
+        private bool exportAsFrames = true;
 		// [Tooltip("(Experimental) Export animations using KHR_animation_pointer. Requires the viewer to also support this extension.")]
 		// [SerializeField]
 		// private bool useAnimationPointer = false;
@@ -122,6 +124,7 @@ namespace UnityGLTF
 		public bool ExportDisabledGameObjects { get => exportDisabledGameObjects; set => exportDisabledGameObjects = value; }
 		public bool ExportAnimations { get => exportAnimations; set => exportAnimations = value; }
 		public bool BakeAnimationSpeed { get => bakeAnimationSpeed; set => bakeAnimationSpeed = value; }
+        public bool ExportAsFrames { get => exportAsFrames; set => exportAsFrames = value; }
 
 		[Obsolete("Add/remove \"AnimationPointerPlugin\" from ExportPlugins instead.")]
 		public bool UseAnimationPointer

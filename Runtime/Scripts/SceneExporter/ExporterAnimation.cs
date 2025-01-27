@@ -34,7 +34,7 @@ namespace UnityGLTF
 		private readonly Dictionary<(AnimationClip clip, float speed, string targetPath), Transform> _clipAndSpeedAndPathToExportedTransform = new Dictionary<(AnimationClip, float, string), Transform>();
 		private readonly Dictionary<(AnimationClip clip, float speed, Transform transform), GLTFAnimation> _clipAndSpeedAndNodeToAnimation = new Dictionary<(AnimationClip, float, Transform), GLTFAnimation>();
 
-		private static int AnimationBakingFramerate = 30; // FPS
+		private static int AnimationBakingFramerate = 60; // FPS
 		private static bool BakeAnimationData = true;
 #endif
 
@@ -209,7 +209,7 @@ namespace UnityGLTF
 							speed = state.speed * (state.speedParameterActive ? animator.GetFloat(state.speedParameter) : 1f);
 						}
 						var name = clips[i].name;
-						ExportAnimationClip(clips[i], name, nodeTransform, speed);
+						ExportAnimationClip(clips[i], name, nodeTransform, speed, settings.ExportAsFrames);
 					}
 				}
 			}
@@ -219,7 +219,7 @@ namespace UnityGLTF
 				{
 					if (!clips[i]) continue;
 					var speed = 1f;
-					ExportAnimationClip(clips[i], clips[i].name, nodeTransform, speed);
+					ExportAnimationClip(clips[i], clips[i].name, nodeTransform, speed, settings.ExportAsFrames);
 				}
 			}
 
@@ -227,7 +227,7 @@ namespace UnityGLTF
 				animator.enabled = animatorEnabled;
 		}
 
-		public GLTFAnimation ExportAnimationClip(AnimationClip clip, string name, Transform node, float speed)
+		public GLTFAnimation ExportAnimationClip(AnimationClip clip, string name, Transform node, float speed, bool exportAsFrames)
 		{
 			if (!clip) return null;
 			GLTFAnimation anim = GetOrCreateAnimation(clip, name, speed, node);
@@ -238,7 +238,7 @@ namespace UnityGLTF
 			if(settings.UniqueAnimationNames)
 				anim.Name = ObjectNames.GetUniqueName(_root.Animations.Select(x => x.Name).ToArray(), anim.Name);
 
-			ConvertClipToGLTFAnimation(clip, node, anim, speed);
+			ConvertClipToGLTFAnimation(clip, node, anim, speed, exportAsFrames);
 			
 			if (anim.Channels.Count > 0 && anim.Samplers.Count > 0 && !_root.Animations.Contains(anim))
 			{
@@ -718,7 +718,7 @@ namespace UnityGLTF
 			return clipRequiresSampling;
 		}
 
-		private void ConvertClipToGLTFAnimation(AnimationClip clip, Transform transform, GLTFAnimation animation, float speed)
+		private void ConvertClipToGLTFAnimation(AnimationClip clip, Transform transform, GLTFAnimation animation, float speed, bool exportAsFrames)
 		{
 			convertClipToGLTFAnimationMarker.Begin();
 
@@ -901,7 +901,7 @@ namespace UnityGLTF
 						_clipAndSpeedAndPathToExportedTransform.Add((clip, speed, target), targetTr);
 
 					var curve = targetCurvesBinding[target];
-					var speedMultiplier = Mathf.Clamp(speed, 0.01f, Mathf.Infinity);
+					var speedMultiplier = Mathf.Clamp(exportAsFrames?speed/AnimationBakingFramerate:speed, 0.01f, Mathf.Infinity);
 
 					// Initialize data
 					// Bake and populate animation data
@@ -1325,6 +1325,7 @@ namespace UnityGLTF
 			prop.SortCurves();
 			if (!prop.Validate()) return false;
 
+			// var nbSamples = Mathf.Max(1, Mathf.CeilToInt(length * bakingFramerate));
 			var nbSamples = Mathf.Max(1, Mathf.CeilToInt(length * bakingFramerate));
 			var deltaTime = length / nbSamples;
 
@@ -1365,7 +1366,8 @@ namespace UnityGLTF
 				{
 					var t0 = time / speedMultiplier;
 					_times.Add(t0);
-					if (!AddValue(t0)) return false;
+					// if (!AddValue(t0)) return false;
+					if (!AddValue(time)) return false;
 				}
 
 				bool AddValue(float t)
